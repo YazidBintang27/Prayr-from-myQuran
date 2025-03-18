@@ -23,7 +23,11 @@ import com.muslim.prayr.ui.theme.Primary
 import com.muslim.prayr.ui.theme.ScheduleCardColor
 
 @Composable
-fun ScheduleCard(modifier: Modifier = Modifier) {
+fun ScheduleCard(
+   modifier: Modifier = Modifier,
+   prayerName: String,
+   prayerTime: String?
+) {
    Box(
       modifier = Modifier
          .height(100.dp)
@@ -36,7 +40,7 @@ fun ScheduleCard(modifier: Modifier = Modifier) {
             .padding(20.dp)
       ) {
          Text(
-            "Imsak",
+            prayerName,
             style = MaterialTheme.typography.bodyLarge.copy(
                fontFamily = FontFamily(
                   Font(R.font.awal_ramadhan)
@@ -44,7 +48,7 @@ fun ScheduleCard(modifier: Modifier = Modifier) {
             )
          )
          Text(
-            "04:30",
+            prayerTime ?: "00:00",
             style = MaterialTheme.typography.bodyLarge.copy(fontSize = 24.sp)
          )
       }
@@ -55,6 +59,6 @@ fun ScheduleCard(modifier: Modifier = Modifier) {
 @Composable
 private fun ScheduleCardPreview() {
    PrayrTheme {
-      ScheduleCard()
+//      ScheduleCard()
    }
 }
