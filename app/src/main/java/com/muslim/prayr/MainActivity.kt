@@ -1,12 +1,21 @@
 package com.muslim.prayr
 
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -33,13 +42,13 @@ class MainActivity : ComponentActivity() {
    }
 }
 
+@SuppressLint("ContextCastToActivity")
 @Composable
 fun PrayrApp(
    modifier: Modifier = Modifier,
    navHostController: NavHostController = rememberNavController()
 ) {
    val navBackStackEntry by navHostController.currentBackStackEntryAsState()
-   val currentRoute = navBackStackEntry?.destination?.route
 
    NavHost(
       navController = navHostController,
@@ -66,7 +75,10 @@ fun PrayrApp(
 sealed class Screen(val route: String) {
    data object Splash: Screen("splash")
    data object Home: Screen("home/{id}/{cityName}") {
-      fun createRoute(id: String, cityName: String) = "home/$id/$cityName"
+      fun createRoute(id: String, cityName: String): String {
+         val encodedCity = Uri.encode(cityName)
+         return "home/$id/$encodedCity"
+      }
    }
 }
 

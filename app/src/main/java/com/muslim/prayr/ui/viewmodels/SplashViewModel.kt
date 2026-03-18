@@ -37,7 +37,6 @@ class SplashViewModel @Inject constructor(
    private val _cityName = MutableStateFlow<String>("Unknown")
    val cityName: StateFlow<String> = _cityName.asStateFlow()
 
-   private val _regionName = MutableStateFlow<String>("Unknown")
 
    private val _cityId = MutableStateFlow<String>("")
    val cityId: StateFlow<String> = _cityId.asStateFlow()
@@ -54,9 +53,9 @@ class SplashViewModel @Inject constructor(
             _location.value = lastLocation
 
             lastLocation?.let {
-               val (locality, subAdminArea) = getCityRegionInfo(it.latitude, it.longitude)
+               val locality = getCityName(it.latitude, it.longitude)
                _cityName.value = locality
-               _regionName.value = subAdminArea
+               getLocationId()
             }
          } catch (e: Exception) {
             Log.e("LocationViewModel", "Error fetching location: ${e.message}")
@@ -77,81 +76,77 @@ class SplashViewModel @Inject constructor(
    private fun getCityName(latitude: Double, longitude: Double): String {
       return try {
          val geocoder = Geocoder(context, Locale.getDefault())
-         val addresses = geocoder.getFromLocation(latitude, longitude, 1)
-         addresses?.firstOrNull()?.locality ?: "Unknown"
+         val address = geocoder.getFromLocation(latitude, longitude, 1)
+            ?.firstOrNull()
+
+         address?.subAdminArea
+            ?: address?.locality
+            ?: "Unknown"
+
       } catch (e: Exception) {
          Log.e("LocationViewModel", "Geocoder failed: ${e.message}")
          "Unknown"
       }
    }
 
-   private fun getCityRegionInfo(latitude: Double, longitude: Double): Pair<String, String> {
-      return try {
-         val geocoder = Geocoder(context, Locale.getDefault())
-         val addresses = geocoder.getFromLocation(latitude, longitude, 1)
-         val address = addresses?.firstOrNull()
+   private fun normalizeCityName(name: String): String {
+      val cleanName = name.trim()
 
-         val city = address?.subAdminArea ?: "Unknown"
-         val country = address?.countryName ?: "Unknown"
+      return when {
+         cleanName.contains("Regency", ignoreCase = true) -> {
+            val base = cleanName.replace("Regency", "", ignoreCase = true).trim()
+            "KAB. $base"
+         }
 
-         val formattedLocation = "$city, $country"
+         cleanName.contains("City", ignoreCase = true) -> {
+            val base = cleanName.replace("City", "", ignoreCase = true).trim()
+            "KOTA $base"
+         }
 
-         Pair(formattedLocation, address?.subAdminArea ?: "Unknown")
-      } catch (e: Exception) {
-         Log.e("LocationViewModel", "Geocoder failed: ${e.message}")
-         Pair("Unknown", "Unknown")
+         cleanName.contains("Kabupaten", ignoreCase = true) -> {
+            val base = cleanName.replace("Kabupaten", "", ignoreCase = true).trim()
+            "KAB. $base"
+         }
+
+         cleanName.contains("Kota", ignoreCase = true) -> {
+            val base = cleanName.replace("Kota", "", ignoreCase = true).trim()
+            "KOTA $base"
+         }
+
+         else -> cleanName
       }
    }
 
    fun getLocationId() {
       viewModelScope.launch {
          try {
-            val response = repository.getAllCity()
 
-            val isKecamatan = _cityName.value.startsWith("Kecamatan", ignoreCase = true)
+            val cityQuery = normalizeCityName(_cityName.value)
 
-            var cityData = response.data?.find { cityItem ->
-               val apiCityName = cityItem?.lokasi ?: ""
-
-               if (_regionName.value.contains("Tangerang", ignoreCase = true)) {
-                  apiCityName.contains("TANGERANG", ignoreCase = true) &&
-                        !apiCityName.contains("SELATAN", ignoreCase = true) &&
-                        !apiCityName.contains("KOTA", ignoreCase = true)
-               } else {
-                  // Normal matching logic for other regions
-                  val cleanApiName = apiCityName
-                     .replace("KAB. ", "")
-                     .replace("KABUPATEN ", "")
-                     .replace("KOTA ", "")
-
-                  apiCityName.contains(_regionName.value, ignoreCase = true) ||
-                        cleanApiName.equals(_regionName.value, ignoreCase = true) ||
-                        _regionName.value.contains(cleanApiName, ignoreCase = true)
-               }
+            if (cityQuery.isBlank() || cityQuery == "Unknown") {
+               _locationState.value = ResultState.Error("City not valid")
+               return@launch
             }
 
-            if (cityData == null) {
-               val mainRegionName = _regionName.value
-                  .replace("Kabupaten ", "", ignoreCase = true)
-                  .replace("Kota ", "", ignoreCase = true)
+            val response = repository.getAllCity(cityQuery)
 
-               cityData = response.data?.find { cityItem ->
-                  (cityItem?.lokasi ?: "").contains(mainRegionName, ignoreCase = true)
-               }
-            }
+            _cityName.value = cityQuery
 
-            _cityId.value = cityData?.id ?: ""
+            val cityId = response.data
+               ?.firstOrNull()
+               ?.id
 
-            if (cityData != null) {
-               Log.d("SplashViewModel", "City ID found: ${cityData.id} for location: ${cityData.lokasi}")
+            if (cityId != null) {
+               _cityId.value = cityId
+               _locationState.value = ResultState.Success(Unit)
             } else {
-               Log.d("SplashViewModel", "City ID not found for ${if (isKecamatan) "kecamatan" else "locality"}: ${_cityName.value}, subAdminArea: ${_regionName.value}")
+               _locationState.value =
+                  ResultState.Error("City ID not found for $cityQuery")
             }
 
-            _locationState.value = ResultState.Success(Unit)
          } catch (e: Exception) {
-            Log.e("SplashViewModel", "Error getting location ID: ${e.message}")
-            _locationState.value = ResultState.Error(e.message ?: "Unknown error")
+            _locationState.value =
+               ResultState.Error(e.message ?: "Unknown error")
          }
       }
    }

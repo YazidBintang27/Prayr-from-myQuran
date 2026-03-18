@@ -2,8 +2,10 @@ package com.muslim.prayr.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -30,26 +32,28 @@ fun ScheduleCard(
 ) {
    Box(
       modifier = Modifier
-         .height(100.dp)
+         .height(90.dp)
          .background(color = ScheduleCardColor, shape = RoundedCornerShape(20.dp))
-         .border(width = 2.dp, color = Primary, shape = RoundedCornerShape(20.dp))
+         .border(width = 1.dp, color = Primary, shape = RoundedCornerShape(20.dp))
    ) {
       Column(
          modifier = Modifier
             .fillMaxSize()
-            .padding(20.dp)
+            .padding(20.dp),
+         verticalArrangement = Arrangement.Center
       ) {
          Text(
             prayerName,
             style = MaterialTheme.typography.bodyLarge.copy(
                fontFamily = FontFamily(
-                  Font(R.font.awal_ramadhan)
-               ), fontSize = 24.sp
+                  Font(R.font.montserrat_regular)
+               ), fontSize = 16.sp
             )
          )
+         Spacer(Modifier.height(8.dp))
          Text(
             prayerTime ?: "00:00",
-            style = MaterialTheme.typography.bodyLarge.copy(fontSize = 24.sp)
+            style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
          )
       }
    }

@@ -9,7 +9,9 @@ import retrofit2.http.Path
 
 interface ApiService {
    @GET(ApiConstant.ALL_CITY)
-   suspend fun getAllCity(): AllCity
+   suspend fun getAllCity(
+      @Path("keyword") keyword: String
+   ): AllCity
 
    @GET(ApiConstant.SALAH_DAILY_SCHEDULE)
    suspend fun getDailySchedule(

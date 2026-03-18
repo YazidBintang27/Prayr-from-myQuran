@@ -2,9 +2,12 @@ package com.muslim.prayr.ui.pages
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.text.Layout
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,6 +31,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarColors
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -34,9 +40,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,37 +69,53 @@ fun Home(
    viewModel: HomeViewModel = hiltViewModel()
 ) {
    val context = LocalContext.current
-   val homeState by viewModel.homeState.collectAsState()
-   val scheduleData by viewModel.scheduleData.collectAsState()
-   val hijriCalendar by viewModel.hijriCalendarToday.collectAsState()
+   val scheduleState by viewModel.scheduleState.collectAsState()
+   val hijriState by viewModel.hijriState.collectAsState()
 
    LaunchedEffect(Unit) {
-      Log.d("HomePage", "ID: $id")
-      viewModel.getDailySchedule(id)
+      if (id.isNotBlank()) {
+         viewModel.loadHomeData(id)
+      }
    }
 
-   when (homeState) {
-      is ResultState.Loading -> {
-         Column(
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxSize()
+   when {
+      scheduleState is ResultState.Idle || hijriState is ResultState.Idle -> {
+      }
+      scheduleState is ResultState.Loading || hijriState is ResultState.Loading -> {
+         Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
          ) {
             CircularProgressIndicator()
          }
       }
 
-      is ResultState.Success -> {
-         HomeContent(
-            context = context, viewModel = viewModel, scheduleData = scheduleData,
-            hijriCalendar = hijriCalendar, cityName = cityName
-         )
+      scheduleState is ResultState.Error -> {
+         Toast.makeText(context, "Failed to load prayer schedule", Toast.LENGTH_SHORT).show()
       }
 
-      is ResultState.Error -> {
-         Toast.makeText(context, "Error", Toast.LENGTH_SHORT).show()
+      hijriState is ResultState.Error -> {
+         Toast.makeText(context, "Failed to load hijri calendar", Toast.LENGTH_SHORT).show()
+      }
+
+      scheduleState is ResultState.Success &&
+            hijriState is ResultState.Success -> {
+
+         val schedule =
+            (scheduleState as ResultState.Success<SalahSchedule>).data
+         val hijri =
+            (hijriState as ResultState.Success<HijriCalendar>).data
+
+         HomeContent(
+            context = context,
+            viewModel = viewModel,
+            scheduleData = schedule,
+            hijriCalendar = hijri,
+            cityName = cityName
+         )
       }
    }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -123,34 +147,25 @@ fun HomeContent(
       containerColor = MaterialTheme.colorScheme.background,
       topBar = {
          TopAppBar(
+            colors = TopAppBarDefaults.topAppBarColors(
+               containerColor = MaterialTheme.colorScheme.background,
+               titleContentColor = MaterialTheme.colorScheme.background
+            ),
             title = {
                Row(
                   modifier = Modifier
-                     .fillMaxSize()
-                     .padding(end = 40.dp),
+                     .fillMaxSize(),
                   verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.Center
+                  horizontalArrangement = Arrangement.Start
                ) {
                   Image(
-                     painter = painterResource(R.drawable.app_logo),
+                     painter = painterResource(R.drawable.app_logo_new_prayr),
                      contentScale = ContentScale.Fit,
                      contentDescription = "App Logo",
-                     modifier = Modifier.size(60.dp)
+                     modifier = Modifier.size(80.dp)
                   )
                }
             },
-            navigationIcon = {
-               IconButton(
-                  onClick = {
-                     Toast.makeText(context, "Coming Soon", Toast.LENGTH_SHORT).show()
-                  }
-               ) {
-                  Icon(
-                     painter = painterResource(R.drawable.menu_02_stroke_rounded),
-                     contentDescription = "Menu Navigation Icon"
-                  )
-               }
-            }
          )
       }
    ) { innerPadding ->
@@ -164,6 +179,7 @@ fun HomeContent(
                .padding(top = 12.dp, bottom = 24.dp)
                .height(200.dp)
                .clip(shape = RoundedCornerShape(28.dp))
+               .border(width = 1.dp, color = Color(0x80D1D1D1))
          ) {
             Image(
                painter = painterResource(R.drawable.card_background),
@@ -179,20 +195,20 @@ fun HomeContent(
                Spacer(modifier = Modifier.height(40.dp))
                Text(
                   "${hijriCalendar?.data?.date?.get(1)}",
-                  style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
+                  style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp),
                )
-               Spacer(modifier = Modifier.height(4.dp))
+               Spacer(modifier = Modifier.height(12.dp))
                Text(
                   "${hijriCalendar?.data?.date?.get(2)?.let { formatDate(it) }}",
-                  style = MaterialTheme.typography.bodySmall.copy(fontSize = 16.sp),
+                  style = MaterialTheme.typography.bodySmall.copy(fontSize = 14.sp),
                )
                Row(
                   modifier = Modifier.fillMaxHeight(),
                   verticalAlignment = Alignment.Bottom
                ) {
                   Text(
-                     cityName,
-                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 16.sp),
+                     "$cityName, ID",
+                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 14.sp),
                   )
                   Spacer(modifier = Modifier.width(4.dp))
                   Icon(
@@ -204,7 +220,7 @@ fun HomeContent(
             }
          }
          Text(
-            "Prayer Schedule",
+            "Jadwal Sholat",
             style = MaterialTheme.typography.bodyLarge
          )
          Spacer(modifier = Modifier.height(14.dp))
@@ -231,7 +247,6 @@ fun formatDate(input: String): String {
    val date = inputFormat.parse(input)
    return outputFormat.format(date!!)
 }
-
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

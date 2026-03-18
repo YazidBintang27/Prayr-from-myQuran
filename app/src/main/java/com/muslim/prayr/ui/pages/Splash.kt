@@ -47,7 +47,6 @@ fun Splash(
    ) { isGranted ->
       if (isGranted) {
          viewModel.fetchLastLocation()
-         viewModel.getLocationId()
       } else {
          Toast.makeText(context, "Izin lokasi diperlukan", Toast.LENGTH_SHORT).show()
       }
@@ -60,20 +59,22 @@ fun Splash(
          ) == PackageManager.PERMISSION_GRANTED
       ) {
          viewModel.fetchLastLocation()
-         viewModel.getLocationId()
       } else {
          permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
       }
    }
 
    when (locationState) {
+      is ResultState.Idle -> {}
       is ResultState.Loading -> { SplashContent(viewModel = viewModel) }
       is ResultState.Success -> {
-         navHostController.navigate(Screen.Home.createRoute(cityId, cityName)) {
-            popUpTo(Screen.Splash.route) { inclusive = true }
+         LaunchedEffect(Unit) {
+            navHostController.navigate(Screen.Home.createRoute(cityId, cityName)) {
+               popUpTo(Screen.Splash.route) { inclusive = true }
+            }
          }
       }
-      is ResultState.Error -> { Toast.makeText(context, "Error", Toast.LENGTH_SHORT).show() }
+      is ResultState.Error -> { Toast.makeText(context, cityName, Toast.LENGTH_SHORT).show() }
    }
 }
 
@@ -86,9 +87,9 @@ fun SplashContent(viewModel: SplashViewModel) {
       contentAlignment = Alignment.Center
    ) {
       Image(
-         painter = painterResource(R.drawable.app_logo),
+         painter = painterResource(R.drawable.app_logo_new_prayr),
          contentDescription = "App Logo",
-         modifier = Modifier.size(80.dp)
+         modifier = Modifier.size(120.dp)
       )
    }
 }

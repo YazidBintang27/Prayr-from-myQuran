@@ -11,28 +11,28 @@ import com.muslim.prayr.R
 // Set of Material typography styles to start with
 val Typography = Typography(
    bodyLarge = TextStyle(
-      fontFamily = FontFamily(Font(R.font.raleway_bold)),
+      fontFamily = FontFamily(Font(R.font.montserrat_bold)),
       fontWeight = FontWeight.Bold,
       fontSize = 16.sp,
       lineHeight = 24.sp,
       letterSpacing = 0.5.sp
    ),
    bodySmall = TextStyle(
-      fontFamily = FontFamily(Font(R.font.raleway_medium)),
+      fontFamily = FontFamily(Font(R.font.montserrat_medium)),
       fontWeight = FontWeight.Medium,
       fontSize = 14.sp,
       lineHeight = 24.sp,
       letterSpacing = 0.5.sp
    ),
     titleLarge = TextStyle(
-        fontFamily = FontFamily(Font(R.font.raleway_bold)),
+        fontFamily = FontFamily(Font(R.font.montserrat_bold)),
         fontWeight = FontWeight.Bold,
         fontSize = 20.sp,
         lineHeight = 28.sp,
         letterSpacing = 0.sp
     ),
     labelSmall = TextStyle(
-        fontFamily = FontFamily(Font(R.font.raleway_medium)),
+        fontFamily = FontFamily(Font(R.font.montserrat_medium)),
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp,

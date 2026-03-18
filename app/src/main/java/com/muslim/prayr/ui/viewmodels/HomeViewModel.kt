@@ -19,20 +19,26 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(private val repository: Repository): ViewModel() {
-   private var _homeState = MutableStateFlow<ResultState<Unit>>(ResultState.Loading)
-   val homeState: StateFlow<ResultState<Unit>> = _homeState.asStateFlow()
+   private val _scheduleState = MutableStateFlow<ResultState<SalahSchedule>>(ResultState.Idle)
+   val scheduleState = _scheduleState.asStateFlow()
+
+   private val _hijriState = MutableStateFlow<ResultState<HijriCalendar>>(ResultState.Idle)
+   val hijriState: StateFlow<ResultState<HijriCalendar>> = _hijriState.asStateFlow()
 
    private var _date = MutableStateFlow<String>("")
    private val date: StateFlow<String> = _date.asStateFlow()
 
-   private var _scheduleData = MutableStateFlow<SalahSchedule?>(null)
-   val scheduleData: StateFlow<SalahSchedule?> = _scheduleData.asStateFlow()
-
-   private var _hijriCalendarToday = MutableStateFlow<HijriCalendar?>(null)
-   val hijriCalendarToday: StateFlow<HijriCalendar?> = _hijriCalendarToday.asStateFlow()
-
    init {
       getDate()
+   }
+
+   private var hasLoaded = false
+
+   fun loadHomeData(cityId: String) {
+      if (hasLoaded) return
+      hasLoaded = true
+
+      getDailySchedule(cityId)
       getHijriCalendarToday()
    }
 
@@ -43,28 +49,28 @@ class HomeViewModel @Inject constructor(private val repository: Repository): Vie
       _date.value = formattedDate
    }
 
-   fun getDailySchedule(cityId: String) {
+   private fun getDailySchedule(cityId: String) {
       viewModelScope.launch {
-         _homeState.value = ResultState.Loading
+         _scheduleState.value = ResultState.Loading
          try {
             val response = repository.getDailySchedule(cityId.toInt(), date.value)
-            _scheduleData.value = response
-            _homeState.value = ResultState.Success(Unit)
+            _scheduleState.value = ResultState.Success(response)
          } catch (e: Exception) {
             Log.e("HomeViewModel", "${e.message}")
+            _scheduleState.value = ResultState.Error(e.message ?: "Unknown error")
          }
       }
    }
 
    private fun getHijriCalendarToday() {
       viewModelScope.launch {
-         _homeState.value = ResultState.Loading
+         _hijriState.value = ResultState.Loading
          try {
             val response = repository.getHijriCalendarToday()
-            _hijriCalendarToday.value = response
-            _homeState.value = ResultState.Success(Unit)
+            _hijriState.value = ResultState.Success(response)
          } catch (e: Exception) {
             Log.e("HomeViewModel", "${e.message}")
+            _hijriState.value = ResultState.Error(e.message ?: "Unknown error")
          }
       }
    }

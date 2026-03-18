@@ -9,8 +9,8 @@ import javax.inject.Inject
 class RepositoryImpl @Inject constructor(
    private val apiService: ApiService
 ) : Repository {
-   override suspend fun getAllCity(): AllCity {
-      return apiService.getAllCity()
+   override suspend fun getAllCity(keyword: String): AllCity {
+      return apiService.getAllCity(keyword)
    }
 
    override suspend fun getDailySchedule(cityId: Int, date: String): SalahSchedule {
